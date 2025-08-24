@@ -44,7 +44,7 @@ export default function MenuLord() {
   const handleEnterGame = () => {
     if (selectedLord) {
       localStorage.setItem("lord", JSON.stringify(selectedLord));
-      router.push("/game");
+      router.push("/game-home");
     }
   };
 
