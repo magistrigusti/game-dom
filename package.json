@@ -1,0 +1,12 @@
+{
+  "name": "my-tac-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "frontend": "cd frontend && npm run dev",
+    "contracts:build": "cd contracts && npx hardhat compile"
+  },
+  "dependencies": {
+    "mongoose": "^8.16.4"
+  }
+}
