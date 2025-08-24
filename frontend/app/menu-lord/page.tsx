@@ -111,7 +111,7 @@ export default function MenuLord() {
           title="enter game"
           onClick={handleEnterGame}  
         >
-
+          Enter Game
         </button>
       </div>
     </div>
