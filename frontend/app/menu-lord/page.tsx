@@ -4,87 +4,114 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import styles from "./MenuLord.module.css";
 
-// Mock data, замени на реальные данные из localStorage
-const mockLords = [
-  { name: 'Magistry', role: 'Стандартный персонаж', avatar: '/default-lord.png', location: 'The Lighthouse', lastPlayed: '2 m.' },
-];
+interface Lord {
+  _id: string;
+  name: string;
+  role: string;
+  avatar?: string;
+  createdAt: Date;
+}
 
 export default function MenuLord() {
   const router = useRouter();
-  const [lords, setLords] = useState(mockLords); // Используем mock, пока не обновишь create-lord
-  const [selectedLord, setSelectedLord] = useState(null);
+  const [lords, setLords] = useState<Lord[]>([]);
+  const [selectedLord, setSelectedLord] = useState<Lord | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // В будущем, ты будешь загружать список отсюда:
-    // const storedLords = localStorage.getItem("lordsList");
-    // if (storedLords) {
-    //   const parsedLords = JSON.parse(storedLords);
-    //   setLords(parsedLords);
-    //   if (parsedLords.length > 0) {
-    //     setSelectedLord(parsedLords[0]);
-    //   }
-    // }
-    if (lords.length > 0) {
-      setSelectedLord(lords[0]);
+    async function fetchLords() {
+      try {
+        const res = await fetch("/api/lords");
+        if (!res.ok) {
+          throw new Error("Не удалось загрузить персонажей");
+        }
+        const data = await res.json();
+        setLords(data);
+        if (data.length > 0) {
+          // Выбираем первого персонажа по умолчанию
+          // Здесь можно будет загружать последнего выбранного
+          setSelectedLord(data[0]);
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
     }
+    fetchLords();
   }, []);
 
   const handleEnterGame = () => {
     if (selectedLord) {
-      // Сохраняем выбранного лорда как активного и переходим в игру
       localStorage.setItem("lord", JSON.stringify(selectedLord));
       router.push("/game");
     }
   };
 
+  if (isLoading) {
+    return <div className={styles.loadingScreen}>Загрузка информации...</div>;
+  }
+
+  // Пока нет персонажей, предлагаем создать
+  if (lords.length === 0) {
+    return (
+       <div className={styles.container}>
+        <div className={styles.noCharsContainer}>
+          <h1 className={styles.noCharsTitle}>У вас пока нет персонажей</h1>
+          <button onClick={() => router.push('/create-lord')} className={styles.createFirstCharButton}>
+            Создать первого героя
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className={styles.container}>
-      {/* Левая панель для выбора персонажа */}
-      <div className={styles.sidebar}>
-        <div className={styles.sidebarHeader}>
-          {/* Замени на свой логотип */}
-          <h1 className={styles.gameTitle}>Dominum</h1> 
-          <h2 className={styles.pageTitle}>ПЕРСОНАЖИ</h2>
-        </div>
-        <div className={styles.characterList}>
-          {lords.map((lord, index) => (
-            <div
-              key={index}
-              className={`${styles.characterItem} ${selectedLord && selectedLord.name === lord.name ? styles.selected : ''}`}
-              onClick={() => setSelectedLord(lord)}
-            >
-              <Image src={lord.avatar} alt={lord.name} width={50} height={50} className={styles.charAvatar} />
-              <div className={styles.charInfo}>
-                <p className={styles.charName}>{lord.name}</p>
-                <p className={styles.charDesc}>{lord.role}</p>
-                <p className={styles.charLocation}>{lord.location}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-        <button className={styles.addCharButton} onClick={() => router.push('/create-lord')}>
-          <span className={styles.plusIcon}>+</span> Добавить персонажа
-        </button>
-      </div>
+      {/* Верхние информационные панели */}
+      <div className={styles.topLeftInfo}>Игровой сервер: Загружаем серверную информацию...</div>
+      <div className={styles.topRightInfo}>Вы на сервере Наследие Богов</div>
 
-      {/* Центральный дисплей персонажа */}
+      {/* Центральный персонаж */}
+      <div className={styles.characterDisplay}>
+        <Image
+          src={selectedLord?.avatar || "/default-lord.png"} // Убедись, что у лорда есть поле avatar
+          alt={selectedLord?.name || "Персонаж"}
+          width={400}
+          height={600}
+          className={styles.characterImage}
+        />
+      </div>
+       <div className={styles.platform}></div>
+
+
+      {/* Правая панель с информацией о персонаже */}
       {selectedLord && (
-        <div className={styles.characterDisplay}>
-          <Image src={selectedLord.avatar} alt={selectedLord.name} width={400} height={600} className={styles.mainCharImage} />
+        <div className={styles.characterInfoPanel}>
+          <div className={styles.infoName}>{selectedLord.name}</div>
+          <div className={styles.infoRole}>{selectedLord.role}</div>
+          <div className={styles.infoLevel}>Уровень 1</div>
+          <div className={styles.infoLocation}>Стартовая локация</div>
         </div>
       )}
 
-      {/* Нижняя панель */}
-      <div className={styles.bottomBar}>
-        <div className={styles.goldInfo}>
-          <p>Золото на сервере: 0</p>
-          <div className={styles.goldButtons}>
-            <button className={styles.goldButton}>Золото</button>
-            <button className={styles.premiumButton}>Премиум</button>
-          </div>
+      {/* Нижний HUD */}
+      <div className={styles.bottomHud}>
+        <div className={styles.hudButton} title="Назад">
+          {/* Иконка назад */}
         </div>
-        <button className={styles.playButton} onClick={handleEnterGame} disabled={!selectedLord}>
-          Войти в игру
+        <div className={styles.hudButton} title="Мир">
+          {/* Иконка мира */}
+        </div>
+        <div className={styles.hudButton} title="Настройки">
+          {/* Иконка настроек */}
+        </div>
+
+        <button className={styles.hubButton} 
+          title="enter game"
+          onClick={handleEnterGame}  
+        >
+
         </button>
       </div>
     </div>
